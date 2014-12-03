@@ -131,7 +131,7 @@ public class FrameInfoCot extends JFrame{
 		*/
 		//  JFormattedTextField efFecha = new JFormattedTextField(new Date());
 		
-		efDecimal = new JFormattedTextField();
+		efDecimal = new JFormattedTextField(new Double(0));
 				 // Formato de visualización
 		 NumberFormat dispFormat = NumberFormat.getCurrencyInstance();
 				 // Formato de edición: inglés (separador decimal: el punto)

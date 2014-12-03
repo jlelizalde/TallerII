@@ -4,21 +4,30 @@ import java.awt.BorderLayout;
 import java.awt.FlowLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.event.KeyEvent;
+import java.awt.event.KeyListener;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.NumberFormat;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.List;
+import java.util.Locale;
 
 import javax.swing.JButton;
 import javax.swing.JFormattedTextField;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.JTextField;
 import javax.swing.ListSelectionModel;
 import javax.swing.table.DefaultTableModel;
+import javax.swing.text.DefaultFormatterFactory;
+import javax.swing.text.NumberFormatter;
 
 public class FrameInfoPag extends JFrame{
 	private JLabel lblSumaTotTxt, lblSumaTotRs, lblTotalRestTxt, lblTotRestRs, lblabonoNuevo;
@@ -53,6 +62,14 @@ public class FrameInfoPag extends JFrame{
 		totalCot=0;
 		sumaPagos=0;
 		ResultSet aux2 = null;
+		lblabonoNuevo=null;
+		lblSumaTotRs=null;
+		lblSumaTotTxt=null;
+		lblTotalRestTxt=null;
+		lblTotRestRs=null;
+		regAbono=null;
+		abono=null;
+		scroll=null;
 		try {
 			aux2=((Cotizacion.obtTotal(idVenta, bdm)));
 			while(aux2.next()){
@@ -88,6 +105,9 @@ public class FrameInfoPag extends JFrame{
 		regAbono.addActionListener(new ActionListener(){
 			public void actionPerformed(ActionEvent e){
 				//Registrar el abono 
+				if (!abono.getText().isEmpty()){
+					regAbono();
+				}
 			}
 		});
 		scroll = new JScrollPane(pagosTable);
@@ -97,6 +117,41 @@ public class FrameInfoPag extends JFrame{
 		lblTotalRestTxt = new JLabel("Total Restante: ");
 		double totRest = totalCot-sumaPagos;
 		lblTotRestRs = new JLabel(String.valueOf(totRest));
+		
+		lblabonoNuevo = new JLabel("Abono Nuevo:");
+		abono = new JFormattedTextField(new Double(0));
+		NumberFormat dispFormat = NumberFormat.getCurrencyInstance();
+		NumberFormat editFormat = NumberFormat.getNumberInstance(Locale.ENGLISH);
+		editFormat.setGroupingUsed(false);
+		//nuevo
+		dispFormat.setMaximumIntegerDigits(10);
+		editFormat.setMaximumIntegerDigits(10);
+		NumberFormatter dnFormat = new NumberFormatter(dispFormat);
+		NumberFormatter enFormat = new NumberFormatter(editFormat);
+		DefaultFormatterFactory currFactory = new DefaultFormatterFactory(dnFormat, dnFormat, enFormat);
+		abono.setFormatterFactory(currFactory);
+		abono.setColumns(10);
+		//solo presionara 10 caracteres a lo mas
+		abono.addKeyListener(new KeyListener() {
+			
+			@Override
+			public void keyTyped(KeyEvent e) {
+				if (abono.getText().length()==10)
+					e.consume();
+			}
+			
+			@Override
+			public void keyReleased(KeyEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+			@Override
+			public void keyPressed(KeyEvent arg0) {
+				// TODO Auto-generated method stub
+				
+			}
+		});
 		this.add(scroll,BorderLayout.PAGE_START);
 		this.add(regAbono,BorderLayout.PAGE_END);
 		JPanel pan = new JPanel(new FlowLayout());
@@ -104,9 +159,23 @@ public class FrameInfoPag extends JFrame{
 		pan.add(lblSumaTotRs);
 		pan.add(lblTotalRestTxt);
 		pan.add(lblTotRestRs);
-		this.add(pan,BorderLayout.CENTER);
+		pan.add(lblabonoNuevo);
+		pan.add(abono);
+		this.add(pan,BorderLayout.CENTER);	
 	}
 	
-	
+	public void regAbono(){
+		Calendar currentDate = Calendar.getInstance(); //Get the current date
+		SimpleDateFormat formatter= new SimpleDateFormat("yyyy/MM/dd HH:mm:ss"); //format it as per your requirement
+		String dateNow = formatter.format(currentDate.getTime());
+		Pago pago = new Pago(idVenta,dateNow,Double.parseDouble(abono.getValue().toString()));
+		try {
+			pago.regPago(pago.getIdVenta(), pago.getFechaPago(), pago.getMontoPago(), bdm);
+		} catch (Exception e) {
+			e.printStackTrace();
+			JOptionPane.showMessageDialog(this, "Por el momento no ha sido posible registrar la venta, por favor intente más tarde o comuníquese con el Administrador del sistema");
+		}
+		this.obtDatos();
+	}
 
 }
